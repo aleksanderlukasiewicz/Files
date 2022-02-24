@@ -21,14 +21,189 @@
     SelectedItem="{x:Bind SelectedSidebarItem, Mode=TwoWay, UpdateSourceTrigger=PropertyChanged}"
     mc:Ignorable="d">
     <FlyoutBase.AttachedFlyout>
-        <MenuFlyout x:Name="SidebarContextMenu">
-            <ToggleMenuFlyoutItem IsChecked="{x:Bind ViewModel.ShowFavoritesSection, Mode=TwoWay}" Text="{helpers:ResourceString Name=SidebarFavorites}" />
-            <ToggleMenuFlyoutItem IsChecked="{x:Bind ViewModel.ShowLibrarySection, Mode=TwoWay}" Text="{helpers:ResourceString Name=SidebarLibraries}" />
-            <ToggleMenuFlyoutItem IsChecked="{x:Bind ViewModel.ShowDrivesSection, Mode=TwoWay}" Text="{helpers:ResourceString Name=Drives}" />
-            <ToggleMenuFlyoutItem IsChecked="{x:Bind ViewModel.ShowCloudDrivesSection, Mode=TwoWay}" Text="{helpers:ResourceString Name=SidebarCloudDrives}" />
-            <ToggleMenuFlyoutItem IsChecked="{x:Bind ViewModel.ShowNetworkDrivesSection, Mode=TwoWay}" Text="{helpers:ResourceString Name=SidebarNetworkDrives}" />
-            <ToggleMenuFlyoutItem IsChecked="{x:Bind ViewModel.ShowWslSection, Mode=TwoWay}" Text="{helpers:ResourceString Name=WSL}" />
-            <ToggleMenuFlyoutItem IsChecked="{x:Bind ViewModel.ShowFileTagsSection, Mode=TwoWay}" Text="{helpers:ResourceString Name=FileTags}" x:Name="SidebarContextMenuFileTagsSection" x:Load="{x:Bind ViewModel.AreFileTagsEnabled, Mode=OneWay}" />
+        <MenuFlyout x:Name="SidebarContextMenu"
+                    Closing="SidebarContextMenu_Closing"
+                    >
+
+            <!-- Items merged from GetLocationItemMenuItems() -->
+
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarCreateNewLibrary/Text}"
+                Command="{x:Bind CreateLibraryCommand}"
+                x:Name="SidebarContextMenuCreateLibrary"
+                x:Load="{x:Bind ViewModel.IsLibrariesHeader, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE710;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarRestoreLibraries/Text}"
+                Command="{x:Bind RestoreLibrariesCommand}"
+                x:Name="SidebarContextMenuRestoreLibrary"
+                x:Load="{x:Bind ViewModel.IsLibrariesHeader, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE10E;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=BaseLayoutContextFlyoutEmptyRecycleBin/Text}"
+                Command="{x:Bind EmptyRecycleBinCommand}"
+                x:Name="SidebarContextMenuEmptyRecycleBin"
+                x:Load="{x:Bind ViewModel.ShowEmptyRecycleBin, Mode=OneWay}"
+                IsEnabled="False"
+                Tag="EmptyRecycleBin">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon FontFamily="{StaticResource RecycleBinIcons}" Glyph="&#xEF88;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarOpenInNewPane/Text}"
+                x:Name="SidebarContextMenuOpenInNewPane"
+                Command="{x:Bind OpenInNewPaneCommand}"
+                x:Load="{x:Bind ViewModel.CanOpenInNewPane, Mode=OneWay}"
+                >
+                <MenuFlyoutItem.Icon>
+                    <FontIcon FontFamily="{StaticResource CustomGlyph}" Glyph="&#xF117;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarOpenInNewTab/Text}"
+                x:Name="SidebarContextMenuOpenInNewTab"
+                Command="{x:Bind OpenInNewTabCommand}"
+                x:Load="{x:Bind ViewModel.IsLocationItem, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon FontFamily="{StaticResource CustomGlyph}" Glyph="&#xF113;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarOpenInNewWindow/Text}"
+                x:Name="SidebarContextMenuOpenInNewWindow"
+                Command="{x:Bind OpenInNewWindowCommand}"
+                x:Load="{x:Bind ViewModel.IsLocationItem, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE737;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarFavoritesMoveToTop}"
+                x:Name="SidebarContextMenuMoveToTop"
+                Command="{x:Bind MoveItemToTopCommand}"
+                x:Load="{x:Bind ViewModel.ShowMoveItemUp, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE11C;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarFavoritesMoveOneUp}"
+                x:Name="SidebarContextMenuMoveOneUp"
+                Command="{x:Bind MoveItemUpCommand}"
+                x:Load="{x:Bind ViewModel.ShowMoveItemUp, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE70E;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarFavoritesMoveOneDown}"
+                x:Name="SidebarContextMenuMoveOneDown"
+                Command="{x:Bind MoveItemDownCommand}"
+                x:Load="{x:Bind ViewModel.ShowMoveItemDown, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE70D;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarFavoritesMoveToBottom}"
+                x:Name="SidebarContextMenuMoveToBottom"
+                Command="{x:Bind MoveItemToBottomCommand}"
+                x:Load="{x:Bind ViewModel.ShowMoveItemDown, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE118;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarUnpinFromFavorites/Text}"
+                x:Name="SidebarContextUnpinFromFavorites"
+                Command="{x:Bind UnpinItemCommand}"
+                x:Load="{x:Bind ViewModel.ShowUnpinItem, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE77A;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{x:Bind ViewModel.HideSectionText, Mode=OneWay}"
+                x:Name="SidebarContextHideSection"
+                Command="{x:Bind HideSectionCommand}"
+                x:Load="{x:Bind ViewModel.ShowHideSection, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE77A;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=SideBarEjectDevice/Text}"
+                x:Name="SidebarContextEjectDevice"
+                Command="{x:Bind EjectDeviceCommand}"
+                x:Load="{x:Bind ViewModel.ShowEjectDevice, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon FontFamily="{StaticResource CustomGlyph}" Glyph="&#xF10B;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutItem 
+                Text="{helpers:ResourceString Name=BaseLayoutContextFlyoutPropertiesFolder/Text}"
+                x:Name="SidebarContextProperties"
+                Command="{x:Bind OpenPropertiesCommand}"
+                x:Load="{x:Bind ViewModel.ShowProperties, Mode=OneWay}">
+                <MenuFlyoutItem.Icon>
+                    <FontIcon Glyph="&#xE946;"/>
+                </MenuFlyoutItem.Icon>
+            </MenuFlyoutItem>
+            <MenuFlyoutSubItem 
+                Text="{helpers:ResourceString Name=ContextMenuMoreItemsLabel}"
+                x:Name="SidebarContextMore"
+                Visibility="{x:Bind ViewModel.ShowOverflowButton,Converter={StaticResource ResourceKey=BoolToVisibilityConverter},Mode=OneWay}"
+                x:Load="{x:Bind ViewModel.ShowSectionsToggles, Converter={StaticResource ResourceKey=BoolNegationConverter}, Mode=OneWay}"
+                Tag="ItemOverflow">
+                <MenuFlyoutSubItem.Icon>
+                    <FontIcon Glyph="&#xE712;"/>
+                </MenuFlyoutSubItem.Icon>
+            </MenuFlyoutSubItem>
+            <!-- Setions Items -->
+
+            <ToggleMenuFlyoutItem 
+                IsChecked="{x:Bind ViewModel.ShowFavoritesSection, Mode=TwoWay}" 
+                Text="{helpers:ResourceString Name=SidebarFavorites}" 
+                x:Name="SidebarContextMenuFavoritesSection"
+                x:Load="{x:Bind ViewModel.ShowSectionsToggles, Mode=OneWay}"/>
+            <ToggleMenuFlyoutItem 
+                IsChecked="{x:Bind ViewModel.ShowLibrarySection, Mode=TwoWay}" 
+                Text="{helpers:ResourceString Name=SidebarLibraries}"
+                x:Name="SidebarContextMenuLbrarySection"
+                x:Load="{x:Bind ViewModel.ShowSectionsToggles, Mode=OneWay}"/>
+            <ToggleMenuFlyoutItem 
+                IsChecked="{x:Bind ViewModel.ShowDrivesSection, Mode=TwoWay}" 
+                Text="{helpers:ResourceString Name=Drives}" 
+                x:Name="SidebarContextMenuDrivesSection"
+                x:Load="{x:Bind ViewModel.ShowSectionsToggles, Mode=OneWay}"/>
+            <ToggleMenuFlyoutItem 
+                IsChecked="{x:Bind ViewModel.ShowCloudDrivesSection, Mode=TwoWay}" 
+                Text="{helpers:ResourceString Name=SidebarCloudDrives}"
+                x:Name="SidebarContextMenuCloudDrivesSection"
+                x:Load="{x:Bind ViewModel.ShowSectionsToggles, Mode=OneWay}"/>
+            <ToggleMenuFlyoutItem 
+                IsChecked="{x:Bind ViewModel.ShowNetworkDrivesSection, Mode=TwoWay}" 
+                Text="{helpers:ResourceString Name=SidebarNetworkDrives}"
+                x:Name="SidebarContextMenuNetworkDrivesSection"
+                x:Load="{x:Bind ViewModel.ShowSectionsToggles, Mode=OneWay}"/>
+            <ToggleMenuFlyoutItem 
+                IsChecked="{x:Bind ViewModel.ShowWslSection, Mode=TwoWay}" 
+                Text="{helpers:ResourceString Name=WSL}"
+                x:Name="SidebarContextMenuWSLSection"
+                x:Load="{x:Bind ViewModel.ShowSectionsToggles, Mode=OneWay}"/>
+            <ToggleMenuFlyoutItem 
+                IsChecked="{x:Bind ViewModel.ShowFileTagsSection, Mode=TwoWay}" 
+                Text="{helpers:ResourceString Name=FileTags}" 
+                x:Name="SidebarContextMenuFileTagsSection" 
+                x:Load="{x:Bind ViewModel.ShowFileTagsSectionToggle, Mode=OneWay}" />
         </MenuFlyout>
     </FlyoutBase.AttachedFlyout>
     <muxc:NavigationView.Resources>
@@ -130,6 +305,7 @@
             </DataTemplate>
 
             <mconv:BoolNegationConverter x:Key="BoolNegationConverter" />
+            <mconv:BoolToVisibilityConverter x:Key="BoolToVisibilityConverter"/>
 
             <Style TargetType="SplitView">
                 <Setter Property="BorderBrush" Value="{ThemeResource SystemControlForegroundTransparentBrush}" />

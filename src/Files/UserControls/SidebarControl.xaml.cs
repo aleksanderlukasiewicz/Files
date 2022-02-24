@@ -13,9 +13,8 @@ using Microsoft.Toolkit.Uwp;
 using Microsoft.Toolkit.Uwp.UI;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
+using System.Diagnostics;
 using System.Linq;
-using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Windows.Input;
@@ -30,7 +29,7 @@ using Windows.UI.Xaml.Input;
 
 namespace Files.UserControls
 {
-    public sealed partial class SidebarControl : Microsoft.UI.Xaml.Controls.NavigationView, INotifyPropertyChanged
+    public sealed partial class SidebarControl : Microsoft.UI.Xaml.Controls.NavigationView
     {
         public IUserSettingsService UserSettingsService { get; } = Ioc.Default.GetService<IUserSettingsService>();
 
@@ -72,6 +71,28 @@ namespace Files.UserControls
         public readonly RelayCommand CreateLibraryCommand = new RelayCommand(LibraryHelper.ShowCreateNewLibraryDialog);
 
         public readonly RelayCommand RestoreLibrariesCommand = new RelayCommand(LibraryHelper.ShowRestoreDefaultLibrariesDialog);
+
+        public ICommand HideSectionCommand => new RelayCommand(HideSection);
+
+        public ICommand UnpinItemCommand => new RelayCommand(UnpinItem);
+
+        public ICommand MoveItemToTopCommand => new RelayCommand(MoveItemToTop);
+
+        public ICommand MoveItemUpCommand => new RelayCommand(MoveItemUp);
+
+        public ICommand MoveItemDownCommand => new RelayCommand(MoveItemDown);
+
+        public ICommand MoveItemToBottomCommand => new RelayCommand(MoveItemToBottom);
+
+        public ICommand OpenInNewTabCommand => new RelayCommand(OpenInNewTab);
+
+        public ICommand OpenInNewWindowCommand => new RelayCommand(OpenInNewWindow);
+
+        public ICommand OpenInNewPaneCommand => new RelayCommand(OpenInNewPane);
+
+        public ICommand EjectDeviceCommand => new RelayCommand(EjectDevice);
+
+        public ICommand OpenPropertiesCommand => new RelayCommand(OpenProperties);
 
         private bool IsInPointerPressed = false;
 
@@ -116,183 +137,6 @@ namespace Files.UserControls
         {
             get => (UIElement)GetValue(TabContentProperty);
             set => SetValue(TabContentProperty, value);
-        }
-
-        private bool canOpenInNewPane;
-
-        public bool CanOpenInNewPane
-        {
-            get => canOpenInNewPane;
-            set
-            {
-                if (value != canOpenInNewPane)
-                {
-                    canOpenInNewPane = value;
-                    NotifyPropertyChanged(nameof(CanOpenInNewPane));
-                }
-            }
-        }
-
-        public bool ShowMoveItemUp { get; set; }
-
-        public bool ShowMoveItemDown { get; set; }
-
-        public bool ShowUnpinItem { get; set; }
-
-        public bool ShowHideSection { get; set; }
-
-        public bool ShowProperties { get; set; }
-
-        public bool ShowEmptyRecycleBin { get; set; }
-
-        public bool ShowEjectDevice { get; set; }
-
-        public bool IsLocationItem { get; set; }
-
-        public bool IsLibrariesHeader { get; set; }
-
-        public INavigationControlItem RightClickedItem;
-
-        public event PropertyChangedEventHandler PropertyChanged;
-
-        private void NotifyPropertyChanged([CallerMemberName] string propertyName = "")
-        {
-            PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
-        }
-
-        public void HideSection_Click(object sender, RoutedEventArgs e)
-        {
-            if ("SidebarFavorites".GetLocalized().Equals(RightClickedItem.Text))
-            {
-                UserSettingsService.AppearanceSettingsService.ShowFavoritesSection = false;
-                App.SidebarPinnedController.Model.UpdateFavoritesSectionVisibility();
-            }
-            else if ("SidebarLibraries".GetLocalized().Equals(RightClickedItem.Text))
-            {
-                UserSettingsService.AppearanceSettingsService.ShowLibrarySection = false;
-                App.LibraryManager.UpdateLibrariesSectionVisibility();
-            }
-            else if ("SidebarCloudDrives".GetLocalized().Equals(RightClickedItem.Text))
-            {
-                UserSettingsService.AppearanceSettingsService.ShowCloudDrivesSection = false;
-                App.CloudDrivesManager.UpdateCloudDrivesSectionVisibility();
-            }
-            else if ("Drives".GetLocalized().Equals(RightClickedItem.Text))
-            {
-                UserSettingsService.AppearanceSettingsService.ShowDrivesSection = false;
-                App.DrivesManager.UpdateDrivesSectionVisibility();
-            }
-            else if ("SidebarNetworkDrives".GetLocalized().Equals(RightClickedItem.Text))
-            {
-                UserSettingsService.AppearanceSettingsService.ShowNetworkDrivesSection = false;
-                App.NetworkDrivesManager.UpdateNetworkDrivesSectionVisibility();
-            }
-            else if ("WSL".GetLocalized().Equals(RightClickedItem.Text))
-            {
-                UserSettingsService.AppearanceSettingsService.ShowWslSection = false;
-                App.WSLDistroManager.UpdateWslSectionVisibility();
-            }
-            else if ("FileTags".GetLocalized().Equals(RightClickedItem.Text))
-            {
-                UserSettingsService.AppearanceSettingsService.ShowFileTagsSection = false;
-                App.FileTagsManager.UpdateFileTagsSectionVisibility();
-            }
-        }
-
-        public void UnpinItem_Click(object sender, RoutedEventArgs e)
-        {
-            if (string.Equals(CommonPaths.RecycleBinPath, RightClickedItem.Path, StringComparison.OrdinalIgnoreCase))
-            {
-                UserSettingsService.AppearanceSettingsService.PinRecycleBinToSidebar = false;
-            }
-            else if (RightClickedItem.Section == SectionType.Favorites)
-            {
-                App.SidebarPinnedController.Model.RemoveItem(RightClickedItem.Path);
-            }
-        }
-
-        public void MoveItemToTop_Click(object sender, RoutedEventArgs e)
-        {
-            if (RightClickedItem.Section == SectionType.Favorites)
-            {
-                bool isSelectedSidebarItem = false;
-
-                if (SelectedSidebarItem == RightClickedItem)
-                {
-                    isSelectedSidebarItem = true;
-                }
-
-                int oldIndex = App.SidebarPinnedController.Model.IndexOfItem(RightClickedItem);
-                App.SidebarPinnedController.Model.MoveItem(RightClickedItem, oldIndex, 1);
-
-                if (isSelectedSidebarItem)
-                {
-                    SetValue(SelectedSidebarItemProperty, RightClickedItem);
-                }
-            }
-        }
-
-        public void MoveItemUp_Click(object sender, RoutedEventArgs e)
-        {
-            if (RightClickedItem.Section == SectionType.Favorites)
-            {
-                bool isSelectedSidebarItem = false;
-
-                if (SelectedSidebarItem == RightClickedItem)
-                {
-                    isSelectedSidebarItem = true;
-                }
-
-                int oldIndex = App.SidebarPinnedController.Model.IndexOfItem(RightClickedItem);
-                App.SidebarPinnedController.Model.MoveItem(RightClickedItem, oldIndex, oldIndex - 1);
-
-                if (isSelectedSidebarItem)
-                {
-                    SetValue(SelectedSidebarItemProperty, RightClickedItem);
-                }
-            }
-        }
-
-        public void MoveItemDown_Click(object sender, RoutedEventArgs e)
-        {
-            if (RightClickedItem.Section == SectionType.Favorites)
-            {
-                bool isSelectedSidebarItem = false;
-
-                if (SelectedSidebarItem == RightClickedItem)
-                {
-                    isSelectedSidebarItem = true;
-                }
-
-                int oldIndex = App.SidebarPinnedController.Model.IndexOfItem(RightClickedItem);
-                App.SidebarPinnedController.Model.MoveItem(RightClickedItem, oldIndex, oldIndex + 1);
-
-                if (isSelectedSidebarItem)
-                {
-                    SetValue(SelectedSidebarItemProperty, RightClickedItem);
-                }
-            }
-        }
-
-        public void MoveItemToBottom_Click(object sender, RoutedEventArgs e)
-        {
-            if (RightClickedItem.Section == SectionType.Favorites)
-            {
-                bool isSelectedSidebarItem = false;
-
-                if (SelectedSidebarItem == RightClickedItem)
-                {
-                    isSelectedSidebarItem = true;
-                }
-
-                int oldIndex = App.SidebarPinnedController.Model.IndexOfItem(RightClickedItem);
-                App.SidebarPinnedController.Model.MoveItem(RightClickedItem, oldIndex, App.SidebarPinnedController.Model.FavoriteItems.Count);
-
-                if (isSelectedSidebarItem)
-                {
-                    SetValue(SelectedSidebarItemProperty, RightClickedItem);
-                }
-            }
         }
 
         public static GridLength GetSidebarCompactSize()
@@ -350,15 +194,25 @@ namespace Files.UserControls
 
         private void PaneRoot_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var contextMenu= FlyoutBase.GetAttachedFlyout(this);
-            contextMenu.ShowAt(this, new FlyoutShowOptions() { Position = e.GetPosition(this) });
+            ViewModel.IsLocationItem = false;
+            ViewModel.ShowProperties = false;
+            ViewModel.IsLibrariesHeader = false;
+            ViewModel.ShowUnpinItem = false;
+            ViewModel.ShowMoveItemUp = false;
+            ViewModel.ShowMoveItemDown = false;
+            ViewModel.ShowHideSection = false;
+            ViewModel.ShowEjectDevice = false;
+            ViewModel.ShowEmptyRecycleBin = false;
+            ViewModel.CanOpenInNewPane = ViewModel.IsLocationItem && ViewModel.PaneHolder.IsMultiPaneEnabled;
+            
+            ViewModel.ShowSectionsToggles = true;
+            ShowContextMenu(this, e);
 
             e.Handled = true;
         }
 
         private void NavigationViewLocationItem_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var itemContextMenuFlyout = new Microsoft.UI.Xaml.Controls.CommandBarFlyout();
             var sidebarItem = sender as Microsoft.UI.Xaml.Controls.NavigationViewItem;
             var item = sidebarItem.DataContext as LocationItem;
 
@@ -376,166 +230,296 @@ namespace Files.UserControls
                 bool library = item.Section == SectionType.Library;
                 bool favorite = item.Section == SectionType.Favorites;
 
-                IsLocationItem = true;
-                ShowProperties = true;
-                IsLibrariesHeader = false;
-                ShowUnpinItem = ((library || favorite) && !item.IsDefaultLocation);
-                ShowMoveItemUp = ShowUnpinItem && App.SidebarPinnedController.Model.IndexOfItem(item) > 1;
-                ShowMoveItemDown = ShowUnpinItem && App.SidebarPinnedController.Model.IndexOfItem(item) < App.SidebarPinnedController.Model.FavoriteItems.Count;
-                ShowHideSection = false;
-                ShowEjectDevice = false;
+                ViewModel.IsLocationItem = true;
+                ViewModel.ShowProperties = true;
+                ViewModel.IsLibrariesHeader = false;
+                ViewModel.ShowUnpinItem = ((library || favorite) && !item.IsDefaultLocation);
+                ViewModel.ShowMoveItemUp = ViewModel.ShowUnpinItem && App.SidebarPinnedController.Model.IndexOfItem(item) > 1;
+                ViewModel.ShowMoveItemDown = ViewModel.ShowUnpinItem && App.SidebarPinnedController.Model.IndexOfItem(item) < App.SidebarPinnedController.Model.FavoriteItems.Count;
+                ViewModel.ShowHideSection = false;
+                ViewModel.ShowEjectDevice = false;
+                ViewModel.CanOpenInNewPane = ViewModel.IsLocationItem && ViewModel.PaneHolder.IsMultiPaneEnabled;
 
                 if (string.Equals(item.Path, "Home".GetLocalized(), StringComparison.OrdinalIgnoreCase))
                 {
-                    ShowProperties = false;
+                    ViewModel.ShowProperties = false;
                 }
 
                 if (string.Equals(item.Path, CommonPaths.RecycleBinPath, StringComparison.OrdinalIgnoreCase))
                 {
-                    ShowEmptyRecycleBin = true;
-                    ShowUnpinItem = true;
-                    ShowProperties = false;
+                    ViewModel.ShowEmptyRecycleBin = true;
+                    ViewModel.ShowUnpinItem = true;
+                    ViewModel.ShowProperties = false;
                 }
                 else
                 {
-                    ShowEmptyRecycleBin = false;
+                    ViewModel.ShowEmptyRecycleBin = false;
                 }
-
-                RightClickedItem = item;
-                var menuItems = GetLocationItemMenuItems();
-                var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(menuItems);
-
-                if (!UserSettingsService.AppearanceSettingsService.MoveOverflowMenuItemsToSubMenu)
-                {
-                    secondaryElements.OfType<FrameworkElement>().ForEach(i => i.MinWidth = Constants.UI.ContextMenuItemsMaxWidth); // Set menu min width if the overflow menu setting is disabled
-                }
-
-                secondaryElements.ForEach(i => itemContextMenuFlyout.SecondaryCommands.Add(i));
-                itemContextMenuFlyout.ShowAt(sidebarItem, new FlyoutShowOptions() { Position = e.GetPosition(sidebarItem) });
-
-                LoadShellMenuItems(itemContextMenuFlyout);
             }
             else
             {
-                IsLocationItem = false;
-                ShowProperties = false;
-                IsLibrariesHeader = librariesHeader;
-                ShowUnpinItem = false;
-                ShowMoveItemUp = false;
-                ShowMoveItemDown = false;
-                ShowHideSection = true;
-                ShowEjectDevice = false;
-                ShowEmptyRecycleBin = false;
-
-                RightClickedItem = item;
-                var menuItems = GetLocationItemMenuItems();
-                var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(menuItems);
-                secondaryElements.ForEach(i => itemContextMenuFlyout.SecondaryCommands.Add(i));
-                itemContextMenuFlyout.ShowAt(sidebarItem, new FlyoutShowOptions() { Position = e.GetPosition(sidebarItem) });
+                ViewModel.IsLocationItem = false;
+                ViewModel.ShowProperties = false;
+                ViewModel.IsLibrariesHeader = librariesHeader;
+                ViewModel.ShowUnpinItem = false;
+                ViewModel.ShowMoveItemUp = false;
+                ViewModel.ShowMoveItemDown = false;
+                ViewModel.ShowHideSection = true;
+                ViewModel.ShowEjectDevice = false;
+                ViewModel.ShowEmptyRecycleBin = false;
+                ViewModel.CanOpenInNewPane = ViewModel.IsLocationItem && ViewModel.PaneHolder.IsMultiPaneEnabled;
             }
+
+            ViewModel.ShowSectionsToggles = false;
+            ViewModel.RightClickedItem = item;
+
+            ShowContextMenu((UIElement)sender, e, ViewModel.IsLocationItem);
 
             e.Handled = true;
         }
 
         private void NavigationViewDriveItem_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var itemContextMenuFlyout = new Microsoft.UI.Xaml.Controls.CommandBarFlyout();
             var sidebarItem = sender as Microsoft.UI.Xaml.Controls.NavigationViewItem;
             var item = sidebarItem.DataContext as DriveItem;
 
-            IsLocationItem = true;
-            IsLibrariesHeader = false;
-            ShowEjectDevice = item.IsRemovable;
-            ShowUnpinItem = false;
-            ShowMoveItemUp = false;
-            ShowMoveItemDown = false;
-            ShowEmptyRecycleBin = false;
-            ShowProperties = true;
-            ShowHideSection = false;
+            ViewModel.IsLocationItem = true;
+            ViewModel.IsLibrariesHeader = false;
+            ViewModel.ShowEjectDevice = item.IsRemovable;
+            ViewModel.ShowUnpinItem = false;
+            ViewModel.ShowMoveItemUp = false;
+            ViewModel.ShowMoveItemDown = false;
+            ViewModel.ShowEmptyRecycleBin = false;
+            ViewModel.ShowProperties = true;
+            ViewModel.ShowHideSection = false;
+            ViewModel.CanOpenInNewPane = ViewModel.IsLocationItem && ViewModel.PaneHolder.IsMultiPaneEnabled;
+            
+            ViewModel.ShowSectionsToggles = false;
+            ViewModel.RightClickedItem = item;
 
-            RightClickedItem = item;
-            var menuItems = GetLocationItemMenuItems();
-            var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(menuItems);
-
-            if (!UserSettingsService.AppearanceSettingsService.MoveOverflowMenuItemsToSubMenu)
-            {
-                secondaryElements.OfType<FrameworkElement>().ForEach(i => i.MinWidth = Constants.UI.ContextMenuItemsMaxWidth); // Set menu min width if the overflow menu setting is disabled
-            }
-
-            secondaryElements.ForEach(i => itemContextMenuFlyout.SecondaryCommands.Add(i));
-            itemContextMenuFlyout.ShowAt(sidebarItem, new FlyoutShowOptions() { Position = e.GetPosition(sidebarItem) });
-
-            LoadShellMenuItems(itemContextMenuFlyout);
+            ShowContextMenu((UIElement)sender, e, true);
 
             e.Handled = true;
         }
 
         private void NavigationViewWSLItem_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var itemContextMenuFlyout = new Microsoft.UI.Xaml.Controls.CommandBarFlyout();
             var sidebarItem = sender as Microsoft.UI.Xaml.Controls.NavigationViewItem;
             var item = sidebarItem.DataContext as WslDistroItem;
 
-            IsLocationItem = true;
-            IsLibrariesHeader = false;
-            ShowEjectDevice = false;
-            ShowUnpinItem = false;
-            ShowMoveItemUp = false;
-            ShowMoveItemDown = false;
-            ShowEmptyRecycleBin = false;
-            ShowProperties = false;
-            ShowHideSection = false;
+            ViewModel.IsLocationItem = true;
+            ViewModel.IsLibrariesHeader = false;
+            ViewModel.ShowEjectDevice = false;
+            ViewModel.ShowUnpinItem = false;
+            ViewModel.ShowMoveItemUp = false;
+            ViewModel.ShowMoveItemDown = false;
+            ViewModel.ShowEmptyRecycleBin = false;
+            ViewModel.ShowProperties = false;
+            ViewModel.ShowHideSection = false;
+            ViewModel.CanOpenInNewPane = ViewModel.IsLocationItem && ViewModel.PaneHolder.IsMultiPaneEnabled;
+           
+            ViewModel.ShowSectionsToggles = false;
+            ViewModel.RightClickedItem = item;
 
-            RightClickedItem = item;
-            var menuItems = GetLocationItemMenuItems();
-            var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(menuItems);
-            secondaryElements.ForEach(i => itemContextMenuFlyout.SecondaryCommands.Add(i));
-            itemContextMenuFlyout.ShowAt(sidebarItem, new FlyoutShowOptions() { Position = e.GetPosition(sidebarItem) });
+            ShowContextMenu((UIElement)sender, e, false);
 
             e.Handled = true;
         }
 
         private void NavigationViewFileTagsItem_RightTapped(object sender, RightTappedRoutedEventArgs e)
         {
-            var itemContextMenuFlyout = new Microsoft.UI.Xaml.Controls.CommandBarFlyout();
             var sidebarItem = sender as Microsoft.UI.Xaml.Controls.NavigationViewItem;
             var item = sidebarItem.DataContext as FileTagItem;
 
-            IsLocationItem = true;
-            IsLibrariesHeader = false;
-            ShowEjectDevice = false;
-            ShowUnpinItem = false;
-            ShowMoveItemUp = false;
-            ShowMoveItemDown = false;
-            ShowEmptyRecycleBin = false;
-            ShowProperties = false;
-            ShowHideSection = false;
+            ViewModel.IsLocationItem = true;
+            ViewModel.IsLibrariesHeader = false;
+            ViewModel.ShowEjectDevice = false;
+            ViewModel.ShowUnpinItem = false;
+            ViewModel.ShowMoveItemUp = false;
+            ViewModel.ShowMoveItemDown = false;
+            ViewModel.ShowEmptyRecycleBin = false;
+            ViewModel.ShowProperties = false;
+            ViewModel.ShowHideSection = false;
+            ViewModel.CanOpenInNewPane = ViewModel.IsLocationItem && ViewModel.PaneHolder.IsMultiPaneEnabled;
+            
+            ViewModel.ShowSectionsToggles = true;
+            ViewModel.RightClickedItem = item;
 
-            RightClickedItem = item;
-            var menuItems = GetLocationItemMenuItems();
-            var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(menuItems);
-            secondaryElements.ForEach(i => itemContextMenuFlyout.SecondaryCommands.Add(i));
-            itemContextMenuFlyout.ShowAt(sidebarItem, new FlyoutShowOptions() { Position = e.GetPosition(sidebarItem) });
+            ShowContextMenu((UIElement)sender, e, false);
 
             e.Handled = true;
         }
 
-        private async void OpenInNewTab_Click(object sender, RoutedEventArgs e)
+        private async void OpenInNewTab()
         {
-            if (await CheckEmptyDrive(RightClickedItem.Path))
+            if (await CheckEmptyDrive(ViewModel.RightClickedItem.Path))
             {
                 return;
             }
-            await NavigationHelpers.OpenPathInNewTab(RightClickedItem.Path);
+            await NavigationHelpers.OpenPathInNewTab(ViewModel.RightClickedItem.Path);
         }
 
-        private async void OpenInNewWindow_Click(object sender, RoutedEventArgs e)
+        private async void OpenInNewPane()
         {
-            if (await CheckEmptyDrive(RightClickedItem.Path))
+            if (await CheckEmptyDrive((ViewModel.RightClickedItem as INavigationControlItem)?.Path))
             {
                 return;
             }
-            await NavigationHelpers.OpenPathInNewWindowAsync(RightClickedItem.Path);
+            SidebarItemNewPaneInvoked?.Invoke(this, new SidebarItemNewPaneInvokedEventArgs(ViewModel.RightClickedItem));
+        }
+
+        private async void OpenInNewWindow()
+        {
+            if (await CheckEmptyDrive(ViewModel.RightClickedItem.Path))
+            {
+                return;
+            }
+            await NavigationHelpers.OpenPathInNewWindowAsync(ViewModel.RightClickedItem.Path);
+        }
+
+        private void HideSection()
+        {
+            if ("SidebarFavorites".GetLocalized().Equals(ViewModel.RightClickedItem.Text))
+            {
+                UserSettingsService.AppearanceSettingsService.ShowFavoritesSection = false;
+                App.SidebarPinnedController.Model.UpdateFavoritesSectionVisibility();
+            }
+            else if ("SidebarLibraries".GetLocalized().Equals(ViewModel.RightClickedItem.Text))
+            {
+                UserSettingsService.AppearanceSettingsService.ShowLibrarySection = false;
+                App.LibraryManager.UpdateLibrariesSectionVisibility();
+            }
+            else if ("SidebarCloudDrives".GetLocalized().Equals(ViewModel.RightClickedItem.Text))
+            {
+                UserSettingsService.AppearanceSettingsService.ShowCloudDrivesSection = false;
+                App.CloudDrivesManager.UpdateCloudDrivesSectionVisibility();
+            }
+            else if ("Drives".GetLocalized().Equals(ViewModel.RightClickedItem.Text))
+            {
+                UserSettingsService.AppearanceSettingsService.ShowDrivesSection = false;
+                App.DrivesManager.UpdateDrivesSectionVisibility();
+            }
+            else if ("SidebarNetworkDrives".GetLocalized().Equals(ViewModel.RightClickedItem.Text))
+            {
+                UserSettingsService.AppearanceSettingsService.ShowNetworkDrivesSection = false;
+                App.NetworkDrivesManager.UpdateNetworkDrivesSectionVisibility();
+            }
+            else if ("WSL".GetLocalized().Equals(ViewModel.RightClickedItem.Text))
+            {
+                UserSettingsService.AppearanceSettingsService.ShowWslSection = false;
+                App.WSLDistroManager.UpdateWslSectionVisibility();
+            }
+            else if ("FileTags".GetLocalized().Equals(ViewModel.RightClickedItem.Text))
+            {
+                UserSettingsService.AppearanceSettingsService.ShowFileTagsSection = false;
+                App.FileTagsManager.UpdateFileTagsSectionVisibility();
+            }
+        }
+
+        private void UnpinItem()
+        {
+            if (string.Equals(CommonPaths.RecycleBinPath, ViewModel.RightClickedItem.Path, StringComparison.OrdinalIgnoreCase))
+            {
+                UserSettingsService.AppearanceSettingsService.PinRecycleBinToSidebar = false;
+            }
+            else if (ViewModel.RightClickedItem.Section == SectionType.Favorites)
+            {
+                App.SidebarPinnedController.Model.RemoveItem(ViewModel.RightClickedItem.Path);
+            }
+        }
+
+        private void MoveItemToTop()
+        {
+            if (ViewModel.RightClickedItem.Section == SectionType.Favorites)
+            {
+                bool isSelectedSidebarItem = false;
+
+                if (SelectedSidebarItem == ViewModel.RightClickedItem)
+                {
+                    isSelectedSidebarItem = true;
+                }
+
+                int oldIndex = App.SidebarPinnedController.Model.IndexOfItem(ViewModel.RightClickedItem);
+                App.SidebarPinnedController.Model.MoveItem(ViewModel.RightClickedItem, oldIndex, 1);
+
+                if (isSelectedSidebarItem)
+                {
+                    SetValue(SelectedSidebarItemProperty, ViewModel.RightClickedItem);
+                }
+            }
+        }
+
+        private void MoveItemUp()
+        {
+            if (ViewModel.RightClickedItem.Section == SectionType.Favorites)
+            {
+                bool isSelectedSidebarItem = false;
+
+                if (SelectedSidebarItem == ViewModel.RightClickedItem)
+                {
+                    isSelectedSidebarItem = true;
+                }
+
+                int oldIndex = App.SidebarPinnedController.Model.IndexOfItem(ViewModel.RightClickedItem);
+                App.SidebarPinnedController.Model.MoveItem(ViewModel.RightClickedItem, oldIndex, oldIndex - 1);
+
+                if (isSelectedSidebarItem)
+                {
+                    SetValue(SelectedSidebarItemProperty, ViewModel.RightClickedItem);
+                }
+            }
+        }
+
+        private void MoveItemDown()
+        {
+            if (ViewModel.RightClickedItem.Section == SectionType.Favorites)
+            {
+                bool isSelectedSidebarItem = false;
+
+                if (SelectedSidebarItem == ViewModel.RightClickedItem)
+                {
+                    isSelectedSidebarItem = true;
+                }
+
+                int oldIndex = App.SidebarPinnedController.Model.IndexOfItem(ViewModel.RightClickedItem);
+                App.SidebarPinnedController.Model.MoveItem(ViewModel.RightClickedItem, oldIndex, oldIndex + 1);
+
+                if (isSelectedSidebarItem)
+                {
+                    SetValue(SelectedSidebarItemProperty, ViewModel.RightClickedItem);
+                }
+            }
+        }
+
+        private void MoveItemToBottom()
+        {
+            if (ViewModel.RightClickedItem.Section == SectionType.Favorites)
+            {
+                bool isSelectedSidebarItem = false;
+
+                if (SelectedSidebarItem == ViewModel.RightClickedItem)
+                {
+                    isSelectedSidebarItem = true;
+                }
+
+                int oldIndex = App.SidebarPinnedController.Model.IndexOfItem(ViewModel.RightClickedItem);
+                App.SidebarPinnedController.Model.MoveItem(ViewModel.RightClickedItem, oldIndex, App.SidebarPinnedController.Model.FavoriteItems.Count);
+
+                if (isSelectedSidebarItem)
+                {
+                    SetValue(SelectedSidebarItemProperty, ViewModel.RightClickedItem);
+                }
+            }
+        }
+
+        private void OpenProperties()
+        {
+            SidebarItemPropertiesInvoked?.Invoke(this, new SidebarItemPropertiesInvokedEventArgs(ViewModel.RightClickedItem));
+        }
+
+        private async void EjectDevice()
+        {
+            await DriveHelpers.EjectDeviceAsync(ViewModel.RightClickedItem.Path);
         }
 
         private void NavigationViewItem_DragStarting(UIElement sender, DragStartingEventArgs args)
@@ -984,16 +968,6 @@ namespace Files.UserControls
             lockFlag = false;
         }
 
-        private void Properties_Click(object sender, RoutedEventArgs e)
-        {
-            SidebarItemPropertiesInvoked?.Invoke(this, new SidebarItemPropertiesInvokedEventArgs(RightClickedItem));
-        }
-
-        private async void EjectDevice_Click(object sender, RoutedEventArgs e)
-        {
-            await DriveHelpers.EjectDeviceAsync(RightClickedItem.Path);
-        }
-
         private void SidebarNavView_Loaded(object sender, RoutedEventArgs e)
         {
             (this.FindDescendant("TabContentBorder") as Border).Child = TabContent;
@@ -1119,15 +1093,6 @@ namespace Files.UserControls
             IsPaneOpen = !IsPaneOpen;
         }
 
-        private async void OpenInNewPane_Click(object sender, RoutedEventArgs e)
-        {
-            if (await CheckEmptyDrive((RightClickedItem as INavigationControlItem)?.Path))
-            {
-                return;
-            }
-            SidebarItemNewPaneInvoked?.Invoke(this, new SidebarItemNewPaneInvokedEventArgs(RightClickedItem));
-        }
-
         private void ResizeElementBorder_ManipulationStarted(object sender, ManipulationStartedRoutedEventArgs e)
         {
             if (DisplayMode == Microsoft.UI.Xaml.Controls.NavigationViewDisplayMode.Expanded)
@@ -1157,49 +1122,51 @@ namespace Files.UserControls
             return false;
         }
 
-        private async void LoadShellMenuItems(Microsoft.UI.Xaml.Controls.CommandBarFlyout itemContextMenuFlyout)
+        private async void LoadShellMenuItems(MenuFlyout itemContextMenuFlyout)
         {
             try
             {
-                if (ShowEmptyRecycleBin)
+                if (ViewModel.ShowEmptyRecycleBin)
                 {
-                    var emptyRecycleBinItem = itemContextMenuFlyout.SecondaryCommands.FirstOrDefault(x => x is AppBarButton appBarButton && (appBarButton.Tag as string) == "EmptyRecycleBin") as AppBarButton;
+                    var emptyRecycleBinItem = itemContextMenuFlyout.Items.FirstOrDefault(x => x is MenuFlyoutItemBase menuFlyoutItem && (menuFlyoutItem.Tag as string) == "EmptyRecycleBin") as MenuFlyoutItemBase;
                     if (emptyRecycleBinItem is not null)
                     {
                         var binHasItems = await new RecycleBinHelpers().RecycleBinHasItems();
                         emptyRecycleBinItem.IsEnabled = binHasItems;
                     }
                 }
-                if (IsLocationItem)
+                if (ViewModel.IsLocationItem)
                 {
                     var shiftPressed = Window.Current.CoreWindow.GetKeyState(VirtualKey.Shift).HasFlag(CoreVirtualKeyStates.Down);
                     var shellMenuItems = await ContextFlyoutItemHelper.GetItemContextShellCommandsAsync(connection: await AppServiceConnectionHelper.Instance, currentInstanceViewModel: null, workingDir: null,
-                        new List<ListedItem>() { new ListedItem(null) { ItemPath = RightClickedItem.Path } }, shiftPressed: shiftPressed, showOpenMenu: false);
+                        new List<ListedItem>() { new ListedItem(null) { ItemPath = ViewModel.RightClickedItem.Path } }, shiftPressed: shiftPressed, showOpenMenu: false);
+
+                    var shellItems = ItemModelListToContextFlyoutHelper.GetMenuFlyoutItemsFromModel(shellMenuItems);
+                    shellItems.ForEach(shellItem => shellItem.Tag = "ShellItem");
+
                     if (!UserSettingsService.AppearanceSettingsService.MoveOverflowMenuItemsToSubMenu)
                     {
-                        var (_, secondaryElements) = ItemModelListToContextFlyoutHelper.GetAppBarItemsFromModel(shellMenuItems);
-                        if (secondaryElements.Any())
+                        if (shellItems.Any())
                         {
                             var openedPopups = Windows.UI.Xaml.Media.VisualTreeHelper.GetOpenPopups(Window.Current);
                             var secondaryMenu = openedPopups.FirstOrDefault(popup => popup.Name == "OverflowPopup");
                             var itemsControl = secondaryMenu?.Child.FindDescendant<ItemsControl>();
                             if (itemsControl is not null)
                             {
-                                secondaryElements.OfType<FrameworkElement>().ForEach(x => x.MaxWidth = itemsControl.ActualWidth - Constants.UI.ContextMenuLabelMargin); // Set items max width to current menu width (#5555)
+                                shellItems.OfType<FrameworkElement>().ForEach(x => x.MaxWidth = itemsControl.ActualWidth - Constants.UI.ContextMenuLabelMargin); // Set items max width to current menu width (#5555)
                             }
 
-                            itemContextMenuFlyout.SecondaryCommands.Add(new AppBarSeparator());
-                            secondaryElements.ForEach(i => itemContextMenuFlyout.SecondaryCommands.Add(i));
+                            itemContextMenuFlyout.Items.Add(new MenuFlyoutSeparator() { Tag = "ShellItem" }); ;
+                            shellItems.ForEach(i => itemContextMenuFlyout.Items.Add(i));
                         }
                     }
                     else
                     {
-                        var overflowItems = ItemModelListToContextFlyoutHelper.GetMenuFlyoutItemsFromModel(shellMenuItems);
-                        var overflowItem = itemContextMenuFlyout.SecondaryCommands.FirstOrDefault(x => x is AppBarButton appBarButton && (appBarButton.Tag as string) == "ItemOverflow") as AppBarButton;
+                        var overflowItem = itemContextMenuFlyout.Items.FirstOrDefault(x => x is MenuFlyoutItemBase menuFlyoutItem && (menuFlyoutItem.Tag as string) == "ItemOverflow") as MenuFlyoutItemBase;
                         if (overflowItem is not null)
                         {
-                            overflowItems.ForEach(i => (overflowItem.Flyout as MenuFlyout).Items.Add(i));
-                            overflowItem.Visibility = overflowItems.Any() ? Visibility.Visible : Visibility.Collapsed;
+                            shellItems.ForEach(i => (overflowItem as MenuFlyoutSubItem).Items.Add(i));
+                            ViewModel.ShowOverflowButton= shellItems.Any();
                         }
                     }
                 }
@@ -1207,125 +1174,44 @@ namespace Files.UserControls
             catch { }
         }
 
-        public List<ContextMenuFlyoutItemViewModel> GetLocationItemMenuItems()
+        private void ShowContextMenu(UIElement sender, RightTappedRoutedEventArgs e, bool loadShellItems = false)
         {
-            return new List<ContextMenuFlyoutItemViewModel>()
+
+            var contextMenu = FlyoutBase.GetAttachedFlyout(this) as MenuFlyout;
+            contextMenu.ShowAt(sender, new FlyoutShowOptions() { Position = e.GetPosition(sender) });
+
+            ViewModel.ShowOverflowButton = false;
+
+            if (loadShellItems)
             {
-                new ContextMenuFlyoutItemViewModel()
+               LoadShellMenuItems(contextMenu);
+            }
+        }
+
+        private void HideContextMenu(MenuFlyout flyout)
+        {
+            //cleaning contextMenu from shell and overflow item
+
+            if (!UserSettingsService.AppearanceSettingsService.MoveOverflowMenuItemsToSubMenu)
+            {
+                    var oldShellItems = flyout.Items.Where((i) => i.Tag != null && i.Tag.ToString() == "ShellItem");
+                    oldShellItems.Reverse().ForEach((item) => flyout.Items.Remove(item));
+            }
+            else
+            {
+                var overflowItem = flyout.Items.FirstOrDefault(x => x is MenuFlyoutItemBase menuFlyoutItem && (menuFlyoutItem.Tag as string) == "ItemOverflow") as MenuFlyoutSubItem;
+                if (overflowItem is not null)
                 {
-                    Text = "SideBarCreateNewLibrary/Text".GetLocalized(),
-                    Glyph = "\uE710",
-                    Command = CreateLibraryCommand,
-                    ShowItem = IsLibrariesHeader
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarRestoreLibraries/Text".GetLocalized(),
-                    Glyph = "\uE10E",
-                    Command = RestoreLibrariesCommand,
-                    ShowItem = IsLibrariesHeader
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "BaseLayoutContextFlyoutEmptyRecycleBin/Text".GetLocalized(),
-                    Glyph = "\uEF88",
-                    GlyphFontFamilyName = "RecycleBinIcons",
-                    Command = EmptyRecycleBinCommand,
-                    ShowItem = ShowEmptyRecycleBin,
-                    IsEnabled = false,
-                    ID = "EmptyRecycleBin",
-                    Tag = "EmptyRecycleBin",
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarOpenInNewPane/Text".GetLocalized(),
-                    Glyph = "\uF117",
-                    GlyphFontFamilyName = "CustomGlyph",
-                    Command = new RelayCommand(() => OpenInNewPane_Click(null, null)),
-                    ShowItem = IsLocationItem && CanOpenInNewPane
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarOpenInNewTab/Text".GetLocalized(),
-                    Glyph = "\uF113",
-                    GlyphFontFamilyName = "CustomGlyph",
-                    Command = new RelayCommand(() => OpenInNewTab_Click(null, null)),
-                    ShowItem = IsLocationItem
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarOpenInNewWindow/Text".GetLocalized(),
-                    Glyph = "\uE737",
-                    Command = new RelayCommand(() => OpenInNewWindow_Click(null, null)),
-                    ShowItem = IsLocationItem
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarFavoritesMoveToTop".GetLocalized(),
-                    Glyph = "\uE11C",
-                    Command = new RelayCommand(() => MoveItemToTop_Click(null, null)),
-                    ShowItem = ShowMoveItemUp
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarFavoritesMoveOneUp".GetLocalized(),
-                    Glyph = "\uE70E",
-                    Command = new RelayCommand(() => MoveItemUp_Click(null, null)),
-                    ShowItem = ShowMoveItemUp
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarFavoritesMoveOneDown".GetLocalized(),
-                    Glyph = "\uE70D",
-                    Command = new RelayCommand(() => MoveItemDown_Click(null, null)),
-                    ShowItem = ShowMoveItemDown
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarFavoritesMoveToBottom".GetLocalized(),
-                    Glyph = "\uE118",
-                    Command = new RelayCommand(() => MoveItemToBottom_Click(null, null)),
-                    ShowItem = ShowMoveItemDown
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarUnpinFromFavorites/Text".GetLocalized(),
-                    Glyph = "\uE77A",
-                    Command = new RelayCommand(() => UnpinItem_Click(null, null)),
-                    ShowItem = ShowUnpinItem
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = string.Format("SideBarHideSectionFromSideBar/Text".GetLocalized(), RightClickedItem.Text),
-                    Glyph = "\uE77A",
-                    Command = new RelayCommand(() => HideSection_Click(null, null)),
-                    ShowItem = ShowHideSection
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "SideBarEjectDevice/Text".GetLocalized(),
-                    Glyph = "\uF10B",
-                    GlyphFontFamilyName = "CustomGlyph",
-                    Command = new RelayCommand(() => EjectDevice_Click(null, null)),
-                    ShowItem = ShowEjectDevice
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "BaseLayoutContextFlyoutPropertiesFolder/Text".GetLocalized(),
-                    Glyph = "\uE946",
-                    Command = new RelayCommand(() => Properties_Click(null, null)),
-                    ShowItem = ShowProperties
-                },
-                new ContextMenuFlyoutItemViewModel()
-                {
-                    Text = "ContextMenuMoreItemsLabel".GetLocalized(),
-                    Glyph = "\xE712",
-                    Items = new List<ContextMenuFlyoutItemViewModel>(),
-                    ID = "ItemOverflow",
-                    Tag = "ItemOverflow",
-                    IsHidden = true,
+                    overflowItem.Items.Clear();
                 }
-            }.Where(x => x.ShowItem).ToList();
+            }
+
+            ViewModel.ShowOverflowButton = false;
+        }
+
+        private void SidebarContextMenu_Closing(FlyoutBase sender, FlyoutBaseClosingEventArgs args)
+        {
+            HideContextMenu((MenuFlyout)sender);
         }
     }
 

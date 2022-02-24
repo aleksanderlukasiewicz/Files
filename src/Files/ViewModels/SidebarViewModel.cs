@@ -205,17 +205,137 @@ namespace Files.ViewModels
             }
         }
 
-        public bool AreFileTagsEnabled 
-        {
-            get => UserSettingsService.PreferencesSettingsService.AreFileTagsEnabled;
-        }
-
         private INavigationControlItem selectedSidebarItem;
 
         public INavigationControlItem SidebarSelectedItem
         {
             get => selectedSidebarItem;
             set => SetProperty(ref selectedSidebarItem, value);
+        }
+
+        public INavigationControlItem rightClickedItem;
+
+        //right clicked item
+
+        public INavigationControlItem RightClickedItem
+        {
+            get => rightClickedItem;
+            set{
+                SetProperty(ref rightClickedItem, value);
+                OnPropertyChanged(nameof(HideSectionText));
+            }
+        }
+
+        //contextmenu options
+
+        private bool isLocationItem;
+
+        public bool IsLocationItem
+        {
+            get => isLocationItem;
+            set => SetProperty(ref isLocationItem, value);
+        }
+
+        private bool isLibraryHeader;
+
+        public bool IsLibrariesHeader
+        {
+            get => isLibraryHeader;
+            set => SetProperty(ref isLibraryHeader, value);
+        }
+
+        private bool showEjectDevice;
+
+        private bool canOpenInNewPane;
+
+        public bool CanOpenInNewPane
+        {
+            get => canOpenInNewPane;
+            set => SetProperty(ref canOpenInNewPane, value);
+        }
+
+        public bool ShowEjectDevice
+        {
+            get => showEjectDevice;
+            set => SetProperty(ref showEjectDevice, value);
+        }
+
+        private bool showUnpinItem;
+
+        public bool ShowUnpinItem
+        {
+            get => showUnpinItem;
+            set => SetProperty(ref showUnpinItem, value);
+        }
+
+        private bool showMoveItemUp;
+
+        public bool ShowMoveItemUp
+        {
+            get => showMoveItemUp;
+            set => SetProperty(ref showMoveItemUp, value);
+        }
+
+        private bool showMoveItemDown;
+
+        public bool ShowMoveItemDown
+        {
+            get => showMoveItemDown;
+            set => SetProperty(ref showMoveItemDown, value);
+        }
+
+        private bool showEmptyRecycleBin;
+
+        public bool ShowEmptyRecycleBin
+        {
+            get => showEmptyRecycleBin;
+            set => SetProperty(ref showEmptyRecycleBin, value);
+        }
+
+        private bool showProperties;
+
+        public bool ShowProperties
+        {
+            get => showProperties;
+            set => SetProperty(ref showProperties, value);
+        }
+
+        private bool showHideSection;
+
+        public bool ShowHideSection
+        {
+            get => showHideSection;
+            set => SetProperty(ref showHideSection, value);
+        }
+
+        public string HideSectionText
+        {
+            get => string.Format("SideBarHideSectionFromSideBar/Text".GetLocalized(),(RightClickedItem!=null)?RightClickedItem.Text:"");
+        }
+
+        private bool showSectionsToggles;
+
+        public bool ShowSectionsToggles
+        {
+            get => showSectionsToggles;
+            set
+            {
+                SetProperty(ref showSectionsToggles, value);
+                OnPropertyChanged(nameof(ShowFileTagsSectionToggle));
+            }
+        }
+
+        public bool ShowFileTagsSectionToggle
+        {
+            get => (showSectionsToggles && UserSettingsService.PreferencesSettingsService.AreFileTagsEnabled);
+        }
+
+        private bool showOverflowButton;
+        
+        public bool ShowOverflowButton
+        {
+            get => showOverflowButton;
+            set => SetProperty(ref showOverflowButton, value);
         }
 
         public SidebarViewModel()
@@ -261,7 +381,7 @@ namespace Files.ViewModels
                     OnPropertyChanged(nameof(ShowFileTagsSection));
                     break;
                 case nameof(UserSettingsService.PreferencesSettingsService.AreFileTagsEnabled):
-                    OnPropertyChanged(nameof(AreFileTagsEnabled));
+                    OnPropertyChanged(nameof(ShowFileTagsSectionToggle));
                     break;
             }
         }
